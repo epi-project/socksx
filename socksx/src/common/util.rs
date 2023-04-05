@@ -1,23 +1,48 @@
 use anyhow::Result;
-use std::{net::SocketAddr, os};
+use std::net::SocketAddr;
 use tokio::net::{self, TcpStream};
 
 ///
 ///
 ///
-#[cfg(any(target_os = "linux"))]
-pub fn get_original_dst<S: os::unix::io::AsRawFd>(socket: &S) -> Result<SocketAddr> {
+#[cfg(target_os = "linux")]
+pub fn get_original_dst<S: std::os::unix::io::AsRawFd>(socket: &S) -> Result<SocketAddr> {
     use nix::sys::socket::{self, sockopt, InetAddr};
 
-    let orignal_dst = socket::getsockopt(socket.as_raw_fd(), sockopt::OriginalDst)?;
-    let orignal_dst = InetAddr::V4(orignal_dst).to_std();
+    let original_dst = socket::getsockopt(socket.as_raw_fd(), sockopt::OriginalDst)?;
+    let original_dst = InetAddr::V4(original_dst).to_std();
 
-    Ok(orignal_dst)
+    println!("{original_dst}");
+    Ok(original_dst)
 }
 
-#[cfg(not(any(target_os = "linux")))]
-pub fn get_original_dst<S: os::unix::io::AsRawFd>(_socket: &S) -> Result<SocketAddr> {
-    todo!()
+#[cfg(target_os = "windows")]
+pub fn get_original_dst<S: std::os::windows::io::AsRawSocket>(socket: &S) -> Result<SocketAddr> {
+    use std::str::FromStr;
+    use windows::core::PSTR;
+    use windows::Win32::Networking::WinSock::{SO_ORIGINAL_DST, SOCKET, SOL_SOCKET, getsockopt};
+
+    // Attempt to recover the original destination
+    let original_dst: String = unsafe {
+        // Write the socket option to a buffer
+        let mut original_dst : [u8; 256] = [0; 256];
+        let mut n_bytes      : i32       = 256;
+        if getsockopt(SOCKET(socket.as_raw_socket() as usize), SOL_SOCKET, SO_ORIGINAL_DST as i32, PSTR((&mut original_dst) as *mut u8), &mut n_bytes) != 0 {
+            panic!("Failed to get original address from socket");
+        }
+
+        // Parse it as an address
+        String::from_utf8_lossy(&original_dst[..n_bytes as usize]).into()
+    };
+
+    // Now return the parsed socket address
+    println!("{original_dst}");
+    Ok(SocketAddr::from_str(&original_dst)?)
+}
+
+#[cfg(not(any(target_os = "linux", target_os = "windows")))]
+pub fn get_original_dst<S>(socket: S) -> Result<SocketAddr> {
+    todo!();
 }
 
 ///

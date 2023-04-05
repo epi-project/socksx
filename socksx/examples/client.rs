@@ -59,9 +59,12 @@ async fn connect_v5(
     proxy_addr: String,
     dest_addr: String,
 ) -> Result<()> {
+    println!("Creating client...");
     let client = Socks5Client::new(proxy_addr, None).await?;
+    println!("Connecting...");
     let (mut outgoing, _) = client.connect(dest_addr).await?;
 
+    println!("Writing message!");
     outgoing.write(String::from("Hello, world!\n").as_bytes()).await?;
 
     Ok(())
