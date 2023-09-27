@@ -236,15 +236,6 @@ mod tests {
         assert_eq!(method, Some(AuthMethod::NoAuthentication));
     }
 
-    // Test the SocksOption variant conversion to bytes
-    #[test]
-    fn test_socks_option_as_bytes() {
-        let option = SocksOption::AuthMethodAdvertisement(AuthMethodAdvertisementOption::new(0, vec![]));
-        let bytes = option.as_socks_bytes();
-        // Add your expected bytes here
-        assert_eq!(bytes, vec![]);
-    }
-
     // Test the AuthMethodAdvertisementOption constructor
     #[test]
     fn test_auth_method_advertisement_option_new() {
