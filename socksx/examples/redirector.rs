@@ -1,7 +1,8 @@
 use anyhow::Result;
 use clap::{App, Arg};
-use socksx::{self, Socks5Client, Socks6Client};
 use tokio::net::{TcpListener, TcpStream};
+
+use socksx::{self, Socks5Client, Socks6Client};
 
 // iptables -t nat -A OUTPUT ! -d $PROXY_HOST/32 -o eth0 -p tcp -m tcp -j REDIRECT --to-ports 42000
 
