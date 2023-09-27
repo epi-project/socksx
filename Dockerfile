@@ -1,4 +1,5 @@
-FROM rust:1 as build
+# This Dockerfile is used to build a socks proxy server.
+FROM rust:1.72 as build
 
 RUN rustup component add rustfmt
 
@@ -14,10 +15,10 @@ WORKDIR /socksx
 RUN cargo build --release
 
 # Define final image
-FROM ubuntu:20.04
+FROM ubuntu:23.10
 
 RUN apt-get update && apt-get install -y \
-    libssl1.1 \
+    libssl3 \
     libuv1 \
  && rm -rf /var/lib/apt/lists/*
 
