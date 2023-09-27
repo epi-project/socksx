@@ -1,14 +1,17 @@
-use crate::socks6::{self, Socks6Request};
-use crate::socks6::{
-    options::{AuthMethodAdvertisementOption, SocksOption},
-    AuthMethod,
-};
-use crate::{constants::*, Address, Credentials};
-use anyhow::{ensure, Result};
 use std::{convert::TryInto, net::SocketAddr};
+
+use anyhow::{ensure, Result};
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
 
+use crate::{Address, constants::*, Credentials};
+use crate::socks6::{self, Socks6Request};
+use crate::socks6::{
+    AuthMethod,
+    options::{AuthMethodAdvertisementOption, SocksOption},
+};
+
+/// Represents a SOCKS6 client.
 #[derive(Clone)]
 pub struct Socks6Client {
     proxy_addr: SocketAddr,
@@ -16,9 +19,14 @@ pub struct Socks6Client {
 }
 
 impl Socks6Client {
+    /// Creates a new Socks6Client.
     ///
+    /// # Parameters
+    /// - `proxy_addr`: The address of the SOCKS6 proxy.
+    /// - `credentials`: Optional credentials for authentication.
     ///
-    ///
+    /// # Returns
+    /// A `Result` containing a new `Socks6Client` or an error.
     pub async fn new<A: Into<String>>(
         proxy_addr: A,
         credentials: Option<Credentials>,
@@ -31,9 +39,15 @@ impl Socks6Client {
         })
     }
 
+    /// Connects to a given destination through the SOCKS6 proxy.
     ///
+    /// # Parameters
+    /// - `destination`: The destination to connect to.
+    /// - `initial_data`: Optional initial data to send.
+    /// - `options`: Optional SOCKS options.
     ///
-    ///
+    /// # Returns
+    /// A `Result` containing a tuple of the `TcpStream` and the bound `Address`, or an error.
     pub async fn connect<A>(
         &self,
         destination: A,
@@ -49,10 +63,19 @@ impl Socks6Client {
         Ok((stream, binding))
     }
 
-    /// ...
-    /// ...
-    /// ...
-    /// [socks6-draft11] https://tools.ietf.org/html/draft-olteanu-intarea-socks-6-11
+    /// Conducts the handshake process with the SOCKS6 proxy.
+    ///
+    /// This method implements the handshake protocol as per [socks6-draft11].
+    /// [socks6-draft11]: https://tools.ietf.org/html/draft-olteanu-intarea-socks-6-11
+    ///
+    /// # Parameters
+    /// - `destination`: The destination to connect to.
+    /// - `initial_data`: Optional initial data to send.
+    /// - `options`: Optional SOCKS options.
+    /// - `stream`: The mutable reference to the `TcpStream`.
+    ///
+    /// # Returns
+    /// A `Result` containing the bound `Address` or an error.
     pub async fn handshake<A>(
         &self,
         destination: A,

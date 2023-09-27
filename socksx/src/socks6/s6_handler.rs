@@ -1,26 +1,33 @@
-use crate::addresses::ProxyAddress;
-use crate::socks6::{self, Socks6Reply};
-use crate::{Socks6Client, SocksHandler};
 use anyhow::Result;
 use async_trait::async_trait;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 
+use crate::{Socks6Client, SocksHandler};
+use crate::addresses::ProxyAddress;
+use crate::socks6::{self, Socks6Reply};
+
+/// Implements a SOCKS6 handler.
 #[derive(Clone)]
 pub struct Socks6Handler {
     static_links: Vec<ProxyAddress>,
 }
 
 impl Default for Socks6Handler {
+    /// Default constructor for `Socks6Handler`.
     fn default() -> Self {
         Self::new(vec![])
     }
 }
 
 impl Socks6Handler {
+    /// Constructs a new `Socks6Handler`.
     ///
+    /// # Parameters
+    /// - `static_links`: A list of static proxy addresses.
     ///
-    ///
+    /// # Returns
+    /// A new `Socks6Handler`.
     pub fn new(static_links: Vec<ProxyAddress>) -> Self {
         Socks6Handler { static_links }
     }
@@ -28,9 +35,13 @@ impl Socks6Handler {
 
 #[async_trait]
 impl SocksHandler for Socks6Handler {
+    /// Accepts a request from the source and sets up a tunnel to the destination.
     ///
+    /// # Parameters
+    /// - `source`: A mutable reference to the source TCP stream.
     ///
-    ///
+    /// # Returns
+    /// An `Ok(())` if the tunnel is successfully set up, otherwise an error.
     async fn accept_request(
         &self,
         source: &mut TcpStream,
@@ -43,9 +54,13 @@ impl SocksHandler for Socks6Handler {
         Ok(())
     }
 
+    /// Refuses a request from the source.
     ///
+    /// # Parameters
+    /// - `source`: A mutable reference to the source TCP stream.
     ///
-    ///
+    /// # Returns
+    /// An `Ok(())` if the source is successfully notified of the refusal, otherwise an error.
     async fn refuse_request(
         &self,
         source: &mut TcpStream,
@@ -56,9 +71,13 @@ impl SocksHandler for Socks6Handler {
         Ok(())
     }
 
+    /// Sets up the connection to the destination.
     ///
+    /// # Parameters
+    /// - `source`: A mutable reference to the source TCP stream.
     ///
-    ///
+    /// # Returns
+    /// A `Result` containing the destination `TcpStream` if successful, otherwise an error.
     async fn setup(
         &self,
         source: &mut TcpStream,
