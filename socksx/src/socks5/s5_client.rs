@@ -1,11 +1,14 @@
-use crate::socks5::{self, Socks5Request};
-use crate::{constants::*, Address, Credentials};
-use anyhow::Result;
 use std::convert::TryInto;
 use std::net::SocketAddr;
+
+use anyhow::Result;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 
+use crate::{Address, constants::*, Credentials};
+use crate::socks5::{self, Socks5Request};
+
+/// Represents a SOCKS5 client for connecting to proxy servers.
 #[derive(Clone)]
 pub struct Socks5Client {
     proxy_addr: SocketAddr,
@@ -13,9 +16,16 @@ pub struct Socks5Client {
 }
 
 impl Socks5Client {
+    /// Creates a new `Socks5Client`.
     ///
+    /// # Arguments
     ///
+    /// * `proxy_addr` - The address of the SOCKS5 proxy server.
+    /// * `credentials` - Optional SOCKS5 authentication credentials.
     ///
+    /// # Returns
+    ///
+    /// A `Result` containing the new `Socks5Client` instance.
     pub async fn new<A: Into<String>>(
         proxy_addr: A,
         credentials: Option<Credentials>,
@@ -28,17 +38,21 @@ impl Socks5Client {
         })
     }
 
-    /// ...
-    /// ...
-    /// ...
+    /// Establishes a SOCKS5 connection to the specified destination.
     ///
-    /// [rfc1928] https://tools.ietf.org/html/rfc1928
+    /// # Arguments
+    ///
+    /// * `destination` - The target address and port to connect to.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing a tuple with a `TcpStream` to the destination and the bound address.
     pub async fn connect<A>(
         &self,
         destination: A,
     ) -> Result<(TcpStream, Address)>
-    where
-        A: TryInto<Address, Error = anyhow::Error>,
+        where
+            A: TryInto<Address, Error = anyhow::Error>,
     {
         if let Some(Credentials { username, password }) = &self.credentials {
             ensure!(username.len() > 255, "Username MUST NOT be larger than 255 bytes.");
@@ -70,11 +84,15 @@ impl Socks5Client {
         Ok((stream, binding))
     }
 
-    /// ...
-    /// ...
-    /// ...
+    /// Negotiates the SOCKS5 authentication method with the proxy server.
     ///
-    /// [rfc1928] https://tools.ietf.org/html/rfc1928
+    /// # Arguments
+    ///
+    /// * `stream` - The TCP stream connected to the proxy server.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the selected authentication method.
     async fn negotiate_auth_method(
         &self,
         stream: &mut TcpStream,
@@ -110,11 +128,16 @@ impl Socks5Client {
         }
     }
 
-    /// ...
-    /// ...
-    /// ...
+    /// Authenticates with the SOCKS5 proxy using the provided credentials.
     ///
-    /// [rfc1929] https://tools.ietf.org/html/rfc1929
+    /// # Arguments
+    ///
+    /// * `stream` - The TCP stream connected to the proxy server.
+    /// * `credentials` - The authentication credentials.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` indicating success or an error if authentication fails.
     async fn authenticate(
         &self,
         stream: &mut TcpStream,

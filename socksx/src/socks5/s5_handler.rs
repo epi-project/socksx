@@ -1,16 +1,18 @@
-use crate::addresses::{self, ProxyAddress};
-use crate::socks5::{self, Socks5Reply};
-use crate::SocksHandler;
-use crate::{constants::*, Credentials};
 use anyhow::Result;
 use async_trait::async_trait;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 
+use crate::{constants::*, Credentials};
+use crate::addresses::{self, ProxyAddress};
+use crate::socks5::{self, Socks5Reply};
+use crate::SocksHandler;
+
+/// Represents a SOCKS5 handler for processing client requests.
 #[derive(Clone)]
 pub struct Socks5Handler {
     credentials: Option<Credentials>,
-    chain: Vec<ProxyAddress>,
+    //chain: Vec<ProxyAddress>,
 }
 
 impl Default for Socks5Handler {
@@ -20,22 +22,34 @@ impl Default for Socks5Handler {
 }
 
 impl Socks5Handler {
+    /// Creates a new `Socks5Handler` with an optional list of proxy addresses.
     ///
+    /// # Arguments
     ///
+    /// * `chain` - A vector of `ProxyAddress` instances representing proxy servers in a chain.
     ///
+    /// # Returns
+    ///
+    /// A new `Socks5Handler` instance.
     pub fn new(chain: Vec<ProxyAddress>) -> Self {
         Socks5Handler {
             credentials: None,
-            chain,
+            //chain,
         }
     }
 }
 
 #[async_trait]
 impl SocksHandler for Socks5Handler {
+    /// Accepts a SOCKS5 client request and sets up a bidirectional connection.
     ///
+    /// # Arguments
     ///
+    /// * `source` - The TCP stream representing the client connection.
     ///
+    /// # Returns
+    ///
+    /// A `Result` indicating success or an error.
     async fn accept_request(
         &self,
         source: &mut TcpStream,
@@ -48,9 +62,15 @@ impl SocksHandler for Socks5Handler {
         Ok(())
     }
 
+    /// Refuses a SOCKS5 client request and notifies the client.
     ///
+    /// # Arguments
     ///
+    /// * `source` - The TCP stream representing the client connection.
     ///
+    /// # Returns
+    ///
+    /// A `Result` indicating success or an error.
     async fn refuse_request(
         &self,
         source: &mut TcpStream,
@@ -61,9 +81,15 @@ impl SocksHandler for Socks5Handler {
         Ok(())
     }
 
+    /// Sets up the SOCKS5 connection with a client.
     ///
+    /// # Arguments
     ///
+    /// * `source` - The TCP stream representing the client connection.
     ///
+    /// # Returns
+    ///
+    /// A `Result` containing a TCP stream representing the destination connection.
     async fn setup(
         &self,
         source: &mut TcpStream,
