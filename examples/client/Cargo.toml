@@ -1,0 +1,17 @@
+[package]
+name = "client"
+version = "0.1.0"
+edition = "2021"
+description = "This is an example client for socksx package."
+
+[[bin]]
+name = "client"
+path = "client.rs"
+
+[workspace]
+
+[dependencies]
+anyhow = "1"
+clap = { version = "3.0.0-rc.4", features = ["derive", "env"] }
+socksx = "0.1.1"
+tokio = { version = "1", features = ["full"] }
