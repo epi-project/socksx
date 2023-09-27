@@ -1,19 +1,23 @@
 #[macro_use]
 extern crate human_panic;
 
+use std::{convert::TryInto, sync::Arc};
+
 use anyhow::Result;
 use clap::Parser;
 use dotenv::dotenv;
 use itertools::Itertools;
 use log::LevelFilter;
-use socksx::{self, Socks5Handler, Socks6Handler, SocksHandler};
-use std::{convert::TryInto, sync::Arc};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::Semaphore;
 use tokio::time::Instant;
 
+use socksx::{self, Socks5Handler, Socks6Handler, SocksHandler};
+
+// Alias for SOCKS handler with Arc and Sync/Send trait bounds
 type Handler = Arc<dyn SocksHandler + Sync + Send>;
 
+/// CLI arguments structure
 #[derive(Parser)]
 #[clap(version = env!("CARGO_PKG_VERSION"))]
 struct Args {
@@ -42,11 +46,14 @@ struct Args {
     socks: u8,
 }
 
+/// Main asynchronous function
 #[tokio::main]
 async fn main() -> Result<()> {
+    // Load environment variables from `.env` file
     dotenv().ok();
     let args = Args::parse();
 
+    // Setup logger
     let mut logger = env_logger::builder();
     logger.format_module_path(false);
 
@@ -55,6 +62,7 @@ async fn main() -> Result<()> {
     } else {
         logger.filter_level(LevelFilter::Info).init();
 
+        // Setup human-friendly panic messages
         setup_panic!(Metadata {
             name: "SOCKSX".into(),
             version: env!("CARGO_PKG_VERSION").into(),
@@ -65,20 +73,17 @@ async fn main() -> Result<()> {
 
     // TODO: validate host
 
-    //
-    //
+    // Convert and collect chain arguments
     let chain = args.chain.iter().cloned().map(|c| c.try_into()).try_collect()?;
 
-    //
-    //
+    // Create a semaphore for connection limiting
     let semaphore = if args.limit > 0 {
         Some(Arc::new(Semaphore::new(args.limit)))
     } else {
         None
     };
 
-    //
-    //
+    // Bind TCP listener to the specified host and port
     let listener = TcpListener::bind(format!("{}:{}", args.host, args.port)).await?;
     let handler: Handler = match args.socks {
         5 => Arc::new(Socks5Handler::new(chain)),
@@ -86,6 +91,7 @@ async fn main() -> Result<()> {
         _ => unreachable!(),
     };
 
+    // Main event loop for accepting incoming connections
     loop {
         let (incoming, _) = listener.accept().await?;
 
@@ -96,9 +102,17 @@ async fn main() -> Result<()> {
     }
 }
 
+/// Asynchronously processes an incoming connection
 ///
+/// # Parameters
 ///
+/// - `incoming`: The incoming `TcpStream`.
+/// - `handler`: The SOCKS handler.
+/// - `semaphore`: An optional semaphore for limiting concurrent connections.
 ///
+/// # Returns
+///
+/// Returns a `Result` indicating the success or failure of the operation.
 async fn process(
     incoming: TcpStream,
     handler: Handler,
@@ -107,6 +121,7 @@ async fn process(
     let mut incoming = incoming;
     let start_time = Instant::now();
 
+    // Handle the incoming connection based on the availability of permits
     if let Some(semaphore) = semaphore {
         let permit = semaphore.try_acquire();
         if permit.is_ok() {
@@ -118,6 +133,7 @@ async fn process(
         handler.accept_request(&mut incoming).await?;
     }
 
+    // Log the time taken to process the request
     println!("{}ms", Instant::now().saturating_duration_since(start_time).as_millis());
 
     Ok(())
