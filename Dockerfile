@@ -15,7 +15,7 @@ WORKDIR /socksx
 RUN cargo build --release
 
 # Define final image
-FROM ubuntu:23.10
+FROM ubuntu:22.04
 
 RUN apt-get update && apt-get install -y \
     libssl3 \

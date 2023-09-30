@@ -1,3 +1,10 @@
+/// This is the main entry point for the SOCKSX proxy server.
+/// It is responsible for parsing CLI arguments, setting up logging, and
+/// spawning the main event loop.
+/// The main event loop is responsible for accepting incoming connections and
+/// spawning a new task for each connection.
+/// Each task is responsible for handling the SOCKS handshake and proxying
+/// data between the client and the destination server.
 #[macro_use]
 extern crate human_panic;
 

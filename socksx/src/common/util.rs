@@ -107,3 +107,47 @@ pub async fn try_read_initial_data(stream: &mut TcpStream) -> Result<Option<Vec<
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Mock SocketAddr
+    struct MockSocketAddr {
+        addr: String,
+    }
+
+    impl MockSocketAddr {
+        fn new(addr: &str) -> Self {
+            Self {
+                addr: addr.to_string(),
+            }
+        }
+    }
+
+    impl Into<String> for MockSocketAddr {
+        fn into(self) -> String {
+            self.addr
+        }
+    }
+
+    // Test resolve_addr function
+    #[tokio::test]
+    async fn test_resolve_addr() {
+        // Test with valid IP address
+        let mock_addr = MockSocketAddr::new("127.0.0.1:8080");
+        let result = resolve_addr(mock_addr).await;
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().to_string(), "127.0.0.1:8080");
+
+        // Test with invalid IP address
+        let mock_addr = MockSocketAddr::new("300.300.300.300:8080");
+        let result = resolve_addr(mock_addr).await;
+        assert!(result.is_err());
+
+        // Test with domain name (this will fail if domain cannot be resolved)
+        let mock_addr = MockSocketAddr::new("localhost:8080");
+        let result = resolve_addr(mock_addr).await;
+        assert!(result.is_ok());
+    }
+}

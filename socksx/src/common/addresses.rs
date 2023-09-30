@@ -88,7 +88,7 @@ impl TryFrom<String> for ProxyAddress {
 }
 
 /// Represents a network address, which could be either a domain name or an IP address.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Address {
     /// An address represented by a domain name.
     Domainname { host: String, port: u16 },

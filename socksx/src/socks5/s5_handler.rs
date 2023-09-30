@@ -31,7 +31,7 @@ impl Socks5Handler {
     /// # Returns
     ///
     /// A new `Socks5Handler` instance.
-    pub fn new(chain: Vec<ProxyAddress>) -> Self {
+    pub fn new(_chain: Vec<ProxyAddress>) -> Self {
         Socks5Handler {
             credentials: None,
             //chain,

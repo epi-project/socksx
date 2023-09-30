@@ -147,7 +147,7 @@ where
     for option in &options {
         match option {
             SocksOption::AuthMethodAdvertisement(advertisement) => {
-                // Make note of initial data length for convience.
+                // Make note of initial data length for convenience.
                 initial_data_length = advertisement.initial_data_length;
             }
             SocksOption::Metadata(key_value) => {
@@ -327,4 +327,46 @@ where
     let options = read_options(stream).await?;
 
     Ok((binding, options))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Test creation of a new Socks6Request.
+    #[test]
+    fn test_new_socks6_request() {
+        let request = Socks6Request::new(
+            Socks6Command::Connect as u8,
+            Address::new("192.168.1.1", 80),
+            0,
+            vec![],
+            None,
+        );
+
+        // Ensure the fields are correctly set.
+        assert_eq!(request.command, Socks6Command::Connect);
+        assert_eq!(
+            request.destination,
+            Address::new("192.168.1.1", 80),
+        );
+        assert_eq!(request.initial_data_length, 0);
+        assert_eq!(request.options.len(), 0);
+        assert_eq!(request.metadata.len(), 0);
+    }
+
+    // Test conversion of Socks6Request into a byte sequence.
+    #[test]
+    fn test_into_socks_bytes() {
+        let request = Socks6Request::new(
+            Socks6Command::Connect as u8,
+            Address::new("192.168.1.1", 80),
+            0,
+            vec![],
+            None,
+        );
+        let result = request.into_socks_bytes();
+        let expected_result: Vec<u8> = vec![6, 1, 1, 192, 168, 1, 1, 0, 80, 0, 0, 0];
+        assert_eq!(result, expected_result);
+    }
 }

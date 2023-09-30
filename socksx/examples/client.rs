@@ -1,3 +1,6 @@
+/// A simple SOCKS client that connects to a destination server through a proxy.
+/// This serves as an example of how to use the socksx crate.
+/// This also serves as a test to ensure that the crate works as expected.
 use anyhow::Result;
 use clap::{App, Arg};
 use socksx::{Socks5Client, Socks6Client};

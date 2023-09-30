@@ -3,9 +3,13 @@
 //! While the crate is still in development, it is already usable. 
 //! 
 //! ## Chaining Features
-//! For SOCKS version 5, chaining is not supported yet. It will be added in the future. Eg. Client -> Socks5 -> Destination  
-//! For SOCKS version 6, chaining is supported. It means that you can chain multiple SOCKS6 proxies together. Eg. Client -> Socks6 -> Socks6 -> Destination  
 //!
+//! For `SOCKS version 5`, chaining is not supported yet. It will be added in the future.
+//! Hence, it works in the following way: Client -> Socks5 -> Destination
+//!
+//! For `SOCKS version 6`, chaining is supported. It means that you can chain multiple SOCKS6 proxies together.
+//! Apart from working like version 5, it can also be used to do this - Eg. Client -> Socks6 -> Socks6 -> Destination
+
 
 
 

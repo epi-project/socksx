@@ -138,7 +138,9 @@ mod tests {
     pub fn test_detour_empty_chain() {
         let mut chain = SocksChain::default();
         chain.detour(&[ProxyAddress::new(6, String::from("localhost"), 1, None)]);
-        assert_eq!(chain.links.len(), 2); // Should include root and the new link
+        assert_eq!(chain.index, 0);
+        assert_eq!(chain.links[0], ProxyAddress::root());
+        assert_eq!(chain.links[1], ProxyAddress::new(6, String::from("localhost"), 1, None));
     }
 
     // Tests the `detour` method by checking the order of ports after insertion.

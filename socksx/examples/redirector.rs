@@ -1,3 +1,6 @@
+/// This is a simple redirector that redirects all incoming TCP connections through a SOCKS proxy to
+/// a different destination. This is useful for redirecting traffic from a specific application
+/// through a proxy.
 use anyhow::Result;
 use clap::{App, Arg};
 use tokio::net::{TcpListener, TcpStream};

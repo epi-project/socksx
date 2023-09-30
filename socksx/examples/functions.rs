@@ -1,3 +1,6 @@
+/// This example demonstrates how to apply a function to ingress traffic through the socks proxy.
+/// This example uses ChaCha20 encryption/decryption as the function.
+/// We can have other functions such as compression, decompression, firewall, VPN, annonimization, etc.
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};

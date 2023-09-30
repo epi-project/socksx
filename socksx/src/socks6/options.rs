@@ -257,11 +257,11 @@ mod tests {
     }
 
     // Test the from_socks_bytes function for AuthMethodAdvertisementOption
-    // #[test]
-    // fn test_from_socks_bytes_auth_method_advertisement() {
-    //     let bytes = vec![/* Populate this vector with some example bytes */];
-    //     let result = AuthMethodAdvertisementOption::from_socks_bytes(bytes);
-    //     // Verify the result according to your expectations
-    //     assert!(result.is_ok());
-    // }
+    #[test]
+    fn test_from_socks_bytes_auth_method_advertisement() {
+        let bytes = vec![0x00, 0x02, 0x00, 0x01, 0x02];
+        let result = AuthMethodAdvertisementOption::from_socks_bytes(bytes);
+        // Verify the result according to your expectations
+        assert!(result.is_ok());
+    }
 }
