@@ -62,7 +62,14 @@ async fn main() -> Result<()> {
     }
 }
 
-/// Connects to a destination using SOCKS5 protocol.
+/// Connects to a destination through a proxy using SOCKS5 protocol, then sends an example message through the network tunnel.
+/// 
+/// # Arguments
+/// - `proxy_addr`: The address of the SOCKS5 proxy through which the traffic will be tunnelled.
+/// - `dest_addr`: The address to which the traffic should be sent after the proxy.
+/// 
+/// # Errors
+/// This function can error if we failed to connect to the given proxy or failed to send it an example message.
 async fn connect_v5(
     proxy_addr: String,
     dest_addr: String,
