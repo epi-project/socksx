@@ -1,10 +1,11 @@
-# This Dockerfile is used to build a socks proxy server.
+# This Dockerfile is used to build a socks proxy server that can be used to encrypt or decrypt the data
 FROM rust:1.72 as build
 
 RUN rustup component add rustfmt
 
 RUN apt-get update && apt-get install -y \
     cmake \
+    make \
  && rm -rf /var/lib/apt/lists/*
 
 # Copy over relevant crates
@@ -12,7 +13,7 @@ COPY ./socksx /socksx
 
 # Build an optimized binary
 WORKDIR /socksx
-RUN cargo build --release
+RUN cargo build --example functions --release
 
 # Define final image
 FROM ubuntu:22.04
@@ -22,8 +23,8 @@ RUN apt-get update && apt-get install -y \
     libuv1 \
  && rm -rf /var/lib/apt/lists/*
 
-# Copy `socksx` from the build stage
-COPY --from=build /socksx/target/release/socksx .
+# Copy `brane-log from the build stage
+COPY --from=build /socksx/target/release/examples/functions .
 
 EXPOSE 1080
-ENTRYPOINT [ "./socksx" ]
+ENTRYPOINT [ "./functions" ]

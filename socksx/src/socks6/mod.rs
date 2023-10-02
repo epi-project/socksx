@@ -1,23 +1,29 @@
+// General purpose SOCKS6 module.
+use std::collections::HashMap;
+use std::convert::TryInto;
+
+use anyhow::{ensure, Result};
+use num_traits::FromPrimitive;
+use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
+
+// Module imports
+pub use chain::SocksChain;
+pub use s6_client::Socks6Client;
+pub use s6_handler::Socks6Handler;
+
+use crate::{constants::*, ProxyAddress};
 use crate::addresses::{self, Address};
 use crate::socks6::options::{
     AuthMethodAdvertisementOption, AuthMethodSelectionOption, MetadataOption, SocksOption, UnrecognizedOption,
 };
-use crate::{constants::*, ProxyAddress};
-use anyhow::{ensure, Result};
-use num_traits::FromPrimitive;
-use std::collections::HashMap;
-use std::convert::TryInto;
-use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
+// Sub-modules
 pub mod chain;
 pub mod options;
 mod s6_client;
 mod s6_handler;
 
-pub use chain::SocksChain;
-pub use s6_client::Socks6Client;
-pub use s6_handler::Socks6Handler;
-
+/// Authentication methods supported.
 #[repr(u8)]
 #[derive(Clone, Debug, FromPrimitive)]
 pub enum AuthMethod {
@@ -27,6 +33,7 @@ pub enum AuthMethod {
     NoAcceptableMethods = 0xFF,
 }
 
+/// Command types in SOCKS6.
 #[repr(u8)]
 #[derive(Clone, Debug, FromPrimitive, PartialEq)]
 pub enum Socks6Command {
@@ -36,6 +43,7 @@ pub enum Socks6Command {
     UdpAssociate = 0x03,
 }
 
+/// Represents a SOCKS6 request.
 #[derive(Clone, Debug)]
 pub struct Socks6Request {
     pub command: Socks6Command,
@@ -46,9 +54,7 @@ pub struct Socks6Request {
 }
 
 impl Socks6Request {
-    ///
-    ///
-    ///
+    /// Constructor for Socks6Request
     pub fn new(
         command: u8,
         destination: Address,
@@ -65,9 +71,7 @@ impl Socks6Request {
         }
     }
 
-    ///
-    ///
-    ///
+    /// Chain function to link multiple proxies.
     pub fn chain(
         &self,
         static_links: &[ProxyAddress],
@@ -100,9 +104,7 @@ impl Socks6Request {
         }
     }
 
-    ///
-    ///
-    ///
+    /// Convert the request into a byte sequence for SOCKS6.
     pub fn into_socks_bytes(self) -> Vec<u8> {
         let mut data = vec![SOCKS_VER_6, SOCKS_CMD_CONNECT];
         data.extend(self.destination.as_socks_bytes());
@@ -118,9 +120,7 @@ impl Socks6Request {
     }
 }
 
-///
-///
-///
+/// Reads a SOCKS6 request from the provided stream.
 pub async fn read_request<S>(stream: &mut S) -> Result<Socks6Request>
 where
     S: AsyncRead + Unpin,
@@ -147,7 +147,7 @@ where
     for option in &options {
         match option {
             SocksOption::AuthMethodAdvertisement(advertisement) => {
-                // Make note of initial data length for convience.
+                // Make note of initial data length for convenience.
                 initial_data_length = advertisement.initial_data_length;
             }
             SocksOption::Metadata(key_value) => {
@@ -170,9 +170,7 @@ where
     ))
 }
 
-///
-///
-///
+/// Reads the SOCKS6 options from the stream.
 pub async fn read_options<S>(stream: &mut S) -> Result<Vec<SocksOption>>
 where
     S: AsyncRead + Unpin,
@@ -211,6 +209,7 @@ where
     Ok(options)
 }
 
+/// Reads the authentication response.
 pub async fn read_no_authentication<S>(stream: &mut S) -> Result<Vec<SocksOption>>
 where
     S: AsyncRead + Unpin,
@@ -241,6 +240,7 @@ where
     Ok(options)
 }
 
+/// Writes a reply to indicate no authentication is needed.
 pub async fn write_no_authentication<S>(stream: &mut S) -> Result<()>
 where
     S: AsyncWrite + Unpin,
@@ -252,6 +252,7 @@ where
     Ok(())
 }
 
+/// Writes the initial data for the SOCKS6 request.
 pub async fn write_initial_data<S>(
     _stream: &mut S,
     _request: &Socks6Request,
@@ -263,6 +264,7 @@ where
     Ok(())
 }
 
+/// Represents SOCKS6 replies.
 #[repr(u8)]
 #[derive(Clone, Debug, FromPrimitive, PartialEq)]
 pub enum Socks6Reply {
@@ -278,9 +280,7 @@ pub enum Socks6Reply {
     ConnectionAttemptTimeOut = 0x09,
 }
 
-///
-///
-///
+/// Writes a SOCKS6 reply to the stream.
 pub async fn write_reply<S>(
     stream: &mut S,
     reply: Socks6Reply,
@@ -308,9 +308,7 @@ where
     Ok(())
 }
 
-///
-///
-///
+/// Reads a SOCKS6 reply from the stream.
 pub async fn read_reply<S>(stream: &mut S) -> Result<(Address, Vec<SocksOption>)>
 where
     S: AsyncRead + Unpin,
@@ -329,4 +327,46 @@ where
     let options = read_options(stream).await?;
 
     Ok((binding, options))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Test creation of a new Socks6Request.
+    #[test]
+    fn test_new_socks6_request() {
+        let request = Socks6Request::new(
+            Socks6Command::Connect as u8,
+            Address::new("192.168.1.1", 80),
+            0,
+            vec![],
+            None,
+        );
+
+        // Ensure the fields are correctly set.
+        assert_eq!(request.command, Socks6Command::Connect);
+        assert_eq!(
+            request.destination,
+            Address::new("192.168.1.1", 80),
+        );
+        assert_eq!(request.initial_data_length, 0);
+        assert_eq!(request.options.len(), 0);
+        assert_eq!(request.metadata.len(), 0);
+    }
+
+    // Test conversion of Socks6Request into a byte sequence.
+    #[test]
+    fn test_into_socks_bytes() {
+        let request = Socks6Request::new(
+            Socks6Command::Connect as u8,
+            Address::new("192.168.1.1", 80),
+            0,
+            vec![],
+            None,
+        );
+        let result = request.into_socks_bytes();
+        let expected_result: Vec<u8> = vec![6, 1, 1, 192, 168, 1, 1, 0, 80, 0, 0, 0];
+        assert_eq!(result, expected_result);
+    }
 }

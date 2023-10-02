@@ -1,13 +1,20 @@
-use anyhow::Result;
 use std::net::SocketAddr;
+
+use anyhow::Result;
 use tokio::net::{self, TcpStream};
 
+/// Retrieves the original destination address from a socket on a Linux system.
 ///
+/// # Parameters
 ///
+/// * `socket`: A reference to a socket implementing `AsRawFd`.
 ///
+/// # Returns
+///
+/// Returns a `Result` containing the original `SocketAddr` or an error.
 #[cfg(target_os = "linux")]
 pub fn get_original_dst<S: std::os::unix::io::AsRawFd>(socket: &S) -> Result<SocketAddr> {
-    use nix::sys::socket::{self, sockopt, InetAddr};
+    use nix::sys::socket::{self, InetAddr, sockopt};
 
     let original_dst = socket::getsockopt(socket.as_raw_fd(), sockopt::OriginalDst)?;
     let original_dst = InetAddr::V4(original_dst).to_std();
@@ -16,11 +23,20 @@ pub fn get_original_dst<S: std::os::unix::io::AsRawFd>(socket: &S) -> Result<Soc
     Ok(original_dst)
 }
 
+/// Retrieves the original destination address from a socket on a Windows system.
+///
+/// # Parameters
+///
+/// * `socket`: A reference to a socket implementing `AsRawSocket`.
+///
+/// # Returns
+///
+/// Returns a `Result` containing the original `SocketAddr` or an error.
 #[cfg(target_os = "windows")]
 pub fn get_original_dst<S: std::os::windows::io::AsRawSocket>(socket: &S) -> Result<SocketAddr> {
     use std::str::FromStr;
     use windows::core::PSTR;
-    use windows::Win32::Networking::WinSock::{SO_ORIGINAL_DST, SOCKET, SOL_SOCKET, getsockopt};
+    use windows::Win32::Networking::WinSock::{getsockopt, SO_ORIGINAL_DST, SOCKET, SOL_SOCKET};
 
     // Attempt to recover the original destination
     let original_dst: String = unsafe {
@@ -41,13 +57,19 @@ pub fn get_original_dst<S: std::os::windows::io::AsRawSocket>(socket: &S) -> Res
 }
 
 #[cfg(not(any(target_os = "linux", target_os = "windows")))]
-pub fn get_original_dst<S>(socket: S) -> Result<SocketAddr> {
+pub fn get_original_dst<S>(_socket: S) -> Result<SocketAddr> {
     todo!();
 }
 
+/// Resolves a given address to a `SocketAddr`.
 ///
+/// # Parameters
 ///
+/// * `addr`: The address, either as a domain name or IP address.
 ///
+/// # Returns
+///
+/// Returns a `Result` containing the resolved `SocketAddr` or an error.
 pub async fn resolve_addr<S: Into<String>>(addr: S) -> Result<SocketAddr> {
     let addr: String = addr.into();
 
@@ -64,9 +86,15 @@ pub async fn resolve_addr<S: Into<String>>(addr: S) -> Result<SocketAddr> {
     }
 }
 
+/// Attempts to read the initial data from a TCP stream.
 ///
+/// # Parameters
 ///
+/// * `stream`: A mutable reference to a `TcpStream`.
 ///
+/// # Returns
+///
+/// Returns a `Result` containing an `Option` with the read data as a `Vec<u8>` or an error.
 pub async fn try_read_initial_data(stream: &mut TcpStream) -> Result<Option<Vec<u8>>> {
     let mut initial_data = Vec::with_capacity(2usize.pow(14)); // 16KB is the max
 
@@ -77,5 +105,49 @@ pub async fn try_read_initial_data(stream: &mut TcpStream) -> Result<Option<Vec<
         Err(e) => {
             return Err(e.into());
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Mock SocketAddr
+    struct MockSocketAddr {
+        addr: String,
+    }
+
+    impl MockSocketAddr {
+        fn new(addr: &str) -> Self {
+            Self {
+                addr: addr.to_string(),
+            }
+        }
+    }
+
+    impl Into<String> for MockSocketAddr {
+        fn into(self) -> String {
+            self.addr
+        }
+    }
+
+    // Test resolve_addr function
+    #[tokio::test]
+    async fn test_resolve_addr() {
+        // Test with valid IP address
+        let mock_addr = MockSocketAddr::new("127.0.0.1:8080");
+        let result = resolve_addr(mock_addr).await;
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().to_string(), "127.0.0.1:8080");
+
+        // Test with invalid IP address
+        let mock_addr = MockSocketAddr::new("300.300.300.300:8080");
+        let result = resolve_addr(mock_addr).await;
+        assert!(result.is_err());
+
+        // Test with domain name (this will fail if domain cannot be resolved)
+        let mock_addr = MockSocketAddr::new("localhost:8080");
+        let result = resolve_addr(mock_addr).await;
+        assert!(result.is_ok());
     }
 }

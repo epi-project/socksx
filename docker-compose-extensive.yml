@@ -1,0 +1,96 @@
+# Example of two proxy chains simulating a sender node/domain and a receiver node/domains.
+# On sender side we have socks proxy, which is connected to a counter (mimicing a firewall) and encrypt
+# On receiver side we have socks proxy, which is connected to decrypt and counter
+# Communication looks like this:
+# sender(client) -> proxy (sender's side) -> counter -> encrypt -> proxy (destination's side) -> decrypt -> counter -> destination
+
+version: '3.8'
+
+services:
+  proxy-main:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "1080:1080"
+    command: "--host 0.0.0.0 --port 1080 --chain socks6://counter-1:1080 --chain socks6://encrypt:1080 --chain socks6://proxy-other:1080"
+    depends_on:
+      - counter-1
+      - encrypt
+      - proxy-other
+    networks:
+      net:
+        ipv4_address: 172.16.238.2
+
+  counter-1:
+    build: 
+      context: .
+      dockerfile: Dockerfile.counter
+    command: "--host 0.0.0.0"
+    networks:
+      net:
+        ipv4_address: 172.16.238.3
+
+  encrypt:
+    build:
+      context: .
+      dockerfile: Dockerfile.encrypt-decrypt
+    command: "chacha20"
+    environment:
+      - CHACHA20_KEY="123456789012345678901234567890"
+    networks:
+      net:
+        ipv4_address: 172.16.238.4
+
+  proxy-other:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "1081:1080"
+    command: "--host 0.0.0.0 --port 1080 --chain socks6://decrypt:1080 --chain socks6://counter-2:1080"
+    depends_on:
+      - counter-2
+      - decrypt
+    networks:
+      net:
+        ipv4_address: 172.16.238.5
+
+  counter-2:
+    build: 
+      context: .
+      dockerfile: Dockerfile.counter
+    command: "--host 0.0.0.0"
+    networks:
+      net:
+        ipv4_address: 172.16.238.6
+
+  decrypt:
+    build:
+      context: .
+      dockerfile: Dockerfile.encrypt-decrypt
+    command: "chacha20"
+    environment:
+      - CHACHA20_KEY="123456789012345678901234567890"
+    networks:
+      net:
+        ipv4_address: 172.16.238.7
+
+  netcat:
+    image: busybox
+    command: "nc -l -p 12345"
+    ports:
+      - "12345:12345"
+    restart: always
+    networks:
+      net:
+        ipv4_address: 172.16.238.8
+
+# The reason to create a virtual network is to be able to assign static IP addresses to the destination container
+# in this case, netcat. We can use this ip address from the client to connect to the destination.
+networks:
+    net:
+        ipam:
+            driver: default
+            config:
+                - subnet: "172.16.238.0/24"

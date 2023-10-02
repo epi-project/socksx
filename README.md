@@ -1,25 +1,66 @@
-# SOCKS toolkit
-[![Build Status](https://github.com/onnovalkering/socksx/workflows/CI/badge.svg)](https://github.com/onnovalkering/socksx/actions)
+# SOCKS toolkit for Rust
 [![License: MIT](https://img.shields.io/github/license/onnovalkering/socksx.svg)](https://github.com/onnovalkering/socksx/blob/master/LICENSE)
-[![Coverage Status](https://coveralls.io/repos/github/onnovalkering/socksx/badge.svg)](https://coveralls.io/github/onnovalkering/socksx?branch=master)
-[![Crates.io](https://img.shields.io/crates/v/socksx)](https://crates.io/crates/socksx)
 
 A work-in-progress SOCKS toolkit for Rust. SOCKS5 ([rfc1928](https://tools.ietf.org/html/rfc1928)) and SOCKS6 ([draft-11](https://tools.ietf.org/html/draft-olteanu-intarea-socks-6-11)) are supported.
 
 [Documentation](https://docs.rs/socksx/latest)
 
-## Python
-The `socksx-py` crate is a [PyO3](https://github.com/PyO3/PyO3)-based Python interface to `socksx`.
+## Client Usage
+Example client usage can be found in ./socksx/examples/client.rs. To run the example, use the following command:
+```bash
+cargo run --example client -- --host 172.16.238.4 --port 1080 --dest_host 172.16.238.5 --dest_port 12345 --src_port 12346
+```
+Note: The ip addresses are just examples, you should use your own ip addresses. I created a docker network and assigned
+ip addresses to the containers.
 
-You can build and install this Python package locally (requires [`pipenv`](https://github.com/pypa/pipenv) and [`maturin`](https://github.com/PyO3/maturin)):
-
-```shell
-$ pipenv install && pipenv shell
-$ maturin develop -m ./socksx-py/Cargo.toml
+## Server Usage
+### Building the binary
+To build the binary, run the following command:
+```bash
+cargo build --release
 ```
 
-To build a manylinux releases:
-
-```shell
-$ docker run --rm -v $(pwd):/io konstin2/maturin build --release -m ./socksx-py/Cargo.toml
+To run the binary, run the following command:
+```bash
+./target/release/socksx --host 0.0.0.0 --port 1080 --protocol socks5
 ```
+
+If you want to using the chaining feature, you can run the following command:
+```bash
+./target/release/socksx --host 0.0.0.0 --port 1080 --protocol socks6 --chain socks6://145.10.0.1:1080
+```
+
+### Docker Image Build
+
+To build the Docker image for the proxy service, use the following command:
+
+(The Dockerfile is located at the root of the repository)
+```bash
+docker build -t proxy:latest -f Dockerfile .
+```
+
+Create a Docker network named `net` with a specified subnet.
+
+```bash
+docker network create --subnet=172.16.238.0/24 net
+```
+
+To run the Docker container, use the following command:
+
+```bash
+docker run --network=net --ip=172.16.238.2 -p 1080:1080 --name proxy proxy:latest --host 0.0.0.0 --port 1080
+```
+
+Make sure to run these commands in the correct sequence: build the image, create the network, and then run the container.
+
+### Docker Compose
+Check out the `docker-compose-proxy.yml` or `docker-compose-extensive.yml` file at the root of the repository for an example of how to use the proxy service with Docker Compose.
+
+
+
+## TODO
+- [ ] support chaining in socks 5
+- [ ] add badge for coverage (coveralls)
+- [ ] add badge for crates link 
+- [ ] add badge for CI status (github actions)
+- [ ] add badge for docs.rs and documentation link

@@ -1,0 +1,15 @@
+# This Dockerfile is supposed to create a socks proxy server that mimics a firewall.
+# This won't build on apple silicon based macs. Try on Linux or Windows or intel based macs.
+FROM ubuntu:22.04
+
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN pip3 install click socksx
+
+COPY ./socksx-py/examples/functions.py /functions.py
+
+EXPOSE 1080
+ENTRYPOINT [ "./functions.py" ]
