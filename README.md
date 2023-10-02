@@ -6,7 +6,12 @@ A work-in-progress SOCKS toolkit for Rust. SOCKS5 ([rfc1928](https://tools.ietf.
 [Documentation](https://docs.rs/socksx/latest)
 
 ## Client Usage
-Example client usage can be found in the examples folder at the root of the repository.
+Example client usage can be found in ./socksx/examples/client.rs. To run the example, use the following command:
+```bash
+cargo run --example client -- --host 172.16.238.4 --port 1080 --dest_host 172.16.238.5 --dest_port 12345 --src_port 12346
+```
+Note: The ip addresses are just examples, you should use your own ip addresses. I created a docker network and assigned
+ip addresses to the containers.
 
 ## Server Usage
 ### Building the binary
