@@ -12,6 +12,7 @@ use std::{convert::TryInto, sync::Arc};
 
 use anyhow::Result;
 use clap::Parser;
+use clap::builder::PossibleValuesParser;
 use dotenv::dotenv;
 use itertools::Itertools;
 use log::LevelFilter;
@@ -29,11 +30,11 @@ type Handler = Arc<dyn SocksHandler + Sync + Send>;
 #[clap(version = env!("CARGO_PKG_VERSION"))]
 struct Args {
     /// Entry in the proxy chain, the order is preserved
-    #[clap(short, long, env = "CHAIN", multiple_occurrences = true)]
+    #[clap(short, long, env = "CHAIN")]
     chain: Vec<String>,
 
     /// Prints debug information
-    #[clap(short, long, env = "DEBUG", takes_value = false)]
+    #[clap(short, long, env = "DEBUG")]
     debug: bool,
 
     /// Host (IP) for the SOCKS server
@@ -49,7 +50,7 @@ struct Args {
     port: u16,
 
     /// SOCKS version
-    #[clap(short, long, env = "SOCKS", default_value = "6", possible_values = &["5", "6"])]
+    #[clap(short, long, env = "SOCKS", default_value = "6", value_parser = PossibleValuesParser::new(["5", "6"]))]
     socks: u8,
 }
 

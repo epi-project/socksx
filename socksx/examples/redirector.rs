@@ -2,43 +2,39 @@
 /// a different destination. This is useful for redirecting traffic from a specific application
 /// through a proxy.
 use anyhow::Result;
-use clap::{App, Arg};
+use clap::Parser;
+use clap::builder::PossibleValuesParser;
 use tokio::net::{TcpListener, TcpStream};
 
 use socksx::{self, Socks5Client, Socks6Client};
 
-// iptables -t nat -A OUTPUT ! -d $PROXY_HOST/32 -o eth0 -p tcp -m tcp -j REDIRECT --to-ports 42000
 
+/***** ARGUMENTS *****/
+#[derive(Debug, Parser)]
+#[clap(name = "Redirector")]
+struct Arguments {
+    #[clap(name="VERSION", short='s', long="socks", value_parser=PossibleValuesParser::new(["5", "6"]), default_value="6", help="The SOCKS version to use")]
+    version    : u8,
+    #[clap(name="PROXY_HOST", long="host", default_value="127.0.0.1", help="The IP/hostname of the proxy")]
+    proxy_host : String,
+    #[clap(name="PROXY_PORT", long="port", default_value="1080", help="The port of the proxy server")]
+    proxy_port : u16,
+}
+
+
+
+
+
+/***** ENTRYPOINT *****/
+// iptables -t nat -A OUTPUT ! -d $PROXY_HOST/32 -o eth0 -p tcp -m tcp -j REDIRECT --to-ports 42000
 #[tokio::main]
 async fn main() -> Result<()> {
-    let args = App::new("Redirector")
-        .arg(
-            Arg::new("VERSION")
-                .short('s')
-                .long("socks")
-                .help("The SOCKS version to use")
-                .possible_values(&["5", "6"])
-                .default_value("5"),
-        )
-        .arg(
-            Arg::new("PROXY_HOST")
-                .help("The IP/hostname of the proxy")
-                .default_value("127.0.0.1"),
-        )
-        .arg(
-            Arg::new("PROXY_PORT")
-                .help("The port of the proxy server")
-                .default_value("1080"),
-        )
-        .get_matches();
-
-    let proxy_host = args.value_of("PROXY_HOST").unwrap();
-    let proxy_port = args.value_of("PROXY_PORT").unwrap();
-    let proxy_addr = format!("{}:{}", proxy_host, proxy_port);
+    let args = Arguments::parse();
+    let proxy_addr = format!("{}:{}", args.proxy_host, args.proxy_port);
 
     let listener = TcpListener::bind("127.0.0.1:42000").await?;
-    match args.value_of("VERSION") {
-        Some("5") => {
+    match args.version {
+        5 => {
             let client = Socks5Client::new(proxy_addr, None).await?;
 
             loop {
@@ -46,7 +42,7 @@ async fn main() -> Result<()> {
                 tokio::spawn(redirect_v5(stream, client.clone()));
             }
         }
-        Some("6") => {
+        6 => {
             let client = Socks6Client::new(proxy_addr, None).await?;
 
             loop {
@@ -54,8 +50,7 @@ async fn main() -> Result<()> {
                 tokio::spawn(redirect_v6(stream, client.clone()));
             }
         }
-        Some(version) => panic!("Unsupported version: {}", version),
-        None => unreachable!(),
+        version => panic!("Unsupported version: {}", version),
     };
 }
 

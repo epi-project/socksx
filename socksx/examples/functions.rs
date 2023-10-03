@@ -8,8 +8,9 @@ use std::task::{Context, Poll};
 use anyhow::Result;
 use bytes::BytesMut;
 use chacha20::{ChaCha20, Key, Nonce};
-use chacha20::cipher::{NewCipher, StreamCipher};
+use chacha20::cipher::{KeyIvInit as _, StreamCipher};
 use clap::Parser;
+use clap::builder::PossibleValuesParser;
 use dotenv::dotenv;
 use pin_project_lite::pin_project;
 use tokio::io::{self, AsyncBufRead, BufReader, BufWriter};
@@ -33,7 +34,7 @@ struct Args {
     port: u16,
 
     /// SOCKS version
-    #[clap(short, long, env = "SOCKS", default_value = "6", possible_values = &["5", "6"])]
+    #[clap(short, long, env = "SOCKS", default_value = "6", value_parser = PossibleValuesParser::new(["5", "6"]))]
     socks: u8,
 
     #[clap(subcommand)]

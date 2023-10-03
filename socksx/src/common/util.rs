@@ -13,11 +13,11 @@ use tokio::net::{self, TcpStream};
 ///
 /// Returns a `Result` containing the original `SocketAddr` or an error.
 #[cfg(target_os = "linux")]
-pub fn get_original_dst<S: std::os::unix::io::AsRawFd>(socket: &S) -> Result<SocketAddr> {
-    use nix::sys::socket::{self, InetAddr, sockopt};
+pub fn get_original_dst<S: std::os::unix::io::AsFd>(socket: &S) -> Result<SocketAddr> {
+    use nix::sys::socket::{self, sockopt};
 
-    let original_dst = socket::getsockopt(socket.as_raw_fd(), sockopt::OriginalDst)?;
-    let original_dst = InetAddr::V4(original_dst).to_std();
+    let original_dst = socket::getsockopt(socket, sockopt::OriginalDst)?;
+    let original_dst = SocketAddr::V4(std::net::SocketAddrV4::new(std::net::Ipv4Addr::from(original_dst.sin_addr.s_addr), original_dst.sin_port));
 
     println!("{original_dst}");
     Ok(original_dst)
