@@ -59,6 +59,7 @@ Check out the `docker-compose-proxy.yml` or `docker-compose-extensive.yml` file 
 
 
 ## TODO
+- [ ] make socksx work for macOS
 - [ ] support chaining in socks 5
 - [ ] add badge for coverage (coveralls)
 - [ ] add badge for crates link 

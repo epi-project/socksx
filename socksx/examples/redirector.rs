@@ -3,7 +3,6 @@
 /// through a proxy.
 use anyhow::Result;
 use clap::Parser;
-use clap::builder::PossibleValuesParser;
 use tokio::net::{TcpListener, TcpStream};
 
 use socksx::{self, Socks5Client, Socks6Client};
@@ -13,7 +12,7 @@ use socksx::{self, Socks5Client, Socks6Client};
 #[derive(Debug, Parser)]
 #[clap(name = "Redirector")]
 struct Arguments {
-    #[clap(name="VERSION", short='s', long="socks", value_parser=PossibleValuesParser::new(["5", "6"]), default_value="6", help="The SOCKS version to use")]
+    #[clap(name="VERSION", short='s', long="socks", default_value="6", help="The SOCKS version to use")]
     version    : u8,
     #[clap(name="PROXY_HOST", long="host", default_value="127.0.0.1", help="The IP/hostname of the proxy")]
     proxy_host : String,
@@ -33,6 +32,7 @@ async fn main() -> Result<()> {
     let proxy_addr = format!("{}:{}", args.proxy_host, args.proxy_port);
 
     let listener = TcpListener::bind("127.0.0.1:42000").await?;
+    // Determine the appropriate SOCKS handler based on the specified version and restricting them to 5 and 6
     match args.version {
         5 => {
             let client = Socks5Client::new(proxy_addr, None).await?;
@@ -50,7 +50,7 @@ async fn main() -> Result<()> {
                 tokio::spawn(redirect_v6(stream, client.clone()));
             }
         }
-        version => panic!("Unsupported version: {}", version),
+        version => { eprintln!("ERROR: Unsupported SOCKS-version '{version}' (supported: `5`, `6`)"); std::process::exit(1); },
     };
 }
 

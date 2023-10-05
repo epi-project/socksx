@@ -3,7 +3,6 @@
 /// This also serves as a test to ensure that the crate works as expected.
 use anyhow::Result;
 use clap::Parser;
-use clap::builder::PossibleValuesParser;
 use socksx::{Socks5Client, Socks6Client};
 use tokio::io::AsyncWriteExt;
 
@@ -12,7 +11,7 @@ use tokio::io::AsyncWriteExt;
 #[derive(Debug, Parser)]
 #[clap(name = "Client")]
 struct Arguments {
-    #[clap(name="VERSION", short='s', long="socks", value_parser=PossibleValuesParser::new(["5", "6"]), default_value="6", help="The SOCKS version to use")]
+    #[clap(name="VERSION", short='s', long="socks", default_value="6", help="The SOCKS version to use")]
     version    : u8,
     #[clap(name="PROXY_HOST", long="host", default_value="127.0.0.1", help="The IP/hostname of the proxy")]
     proxy_host : String,
@@ -38,11 +37,11 @@ async fn main() -> Result<()> {
     let proxy_addr = format!("{}:{}", args.proxy_host, args.proxy_port);
     let dest_addr = format!("{}:{}", args.dest_host, args.dest_port);
 
-    // Determine the SOCKS version specified in the arguments.
+    // Determine the appropriate SOCKS handler based on the specified version and restricting them to 5 and 6
     match args.version {
         5 => connect_v5(proxy_addr, dest_addr).await,
         6 => connect_v6(proxy_addr, dest_addr).await,
-        version => panic!("Unsupported version: {}", version),
+        version => { eprintln!("ERROR: Unsupported SOCKS-version '{version}' (supported: `5`, `6`)"); std::process::exit(1); },
     }
 }
 
