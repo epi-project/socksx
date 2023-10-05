@@ -66,7 +66,7 @@ async fn main() -> Result<()> {
     let handler: Handler = match args.socks {
         5 => Arc::new(Socks5Handler::default()),
         6 => Arc::new(Socks6Handler::default()),
-        _ => unreachable!(),
+        version => { eprintln!("ERROR: Unsupported SOCKS-version '{version}' (supported: `5`, `6`)"); std::process::exit(1); },
     };
 
     // Main loop for accepting incoming connections and processing them.

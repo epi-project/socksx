@@ -41,7 +41,7 @@ async fn main() -> Result<()> {
     match args.version {
         5 => connect_v5(proxy_addr, dest_addr).await,
         6 => connect_v6(proxy_addr, dest_addr).await,
-        version => panic!("Unsupported version: {}", version),
+        version => { eprintln!("ERROR: Unsupported SOCKS-version '{version}' (supported: `5`, `6`)"); std::process::exit(1); },
     }
 }
 

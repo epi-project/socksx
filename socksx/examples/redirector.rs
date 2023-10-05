@@ -50,7 +50,7 @@ async fn main() -> Result<()> {
                 tokio::spawn(redirect_v6(stream, client.clone()));
             }
         }
-        version => panic!("Unsupported version: {}", version),
+        version => { eprintln!("ERROR: Unsupported SOCKS-version '{version}' (supported: `5`, `6`)"); std::process::exit(1); },
     };
 }
 
