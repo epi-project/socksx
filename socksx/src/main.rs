@@ -12,7 +12,6 @@ use std::{convert::TryInto, sync::Arc};
 
 use anyhow::Result;
 use clap::Parser;
-use clap::builder::PossibleValuesParser;
 use dotenv::dotenv;
 use itertools::Itertools;
 use log::LevelFilter;
@@ -50,7 +49,7 @@ struct Args {
     port: u16,
 
     /// SOCKS version
-    #[clap(short, long, env = "SOCKS", default_value = "6", value_parser = PossibleValuesParser::new(["5", "6"]))]
+    #[clap(short, long, env = "SOCKS", default_value = "6")]
     socks: u8,
 }
 
@@ -93,6 +92,7 @@ async fn main() -> Result<()> {
 
     // Bind TCP listener to the specified host and port
     let listener = TcpListener::bind(format!("{}:{}", args.host, args.port)).await?;
+    // Determine the appropriate SOCKS handler based on the specified version and restricting them to 5 and 6
     let handler: Handler = match args.socks {
         5 => Arc::new(Socks5Handler::new(chain)),
         6 => Arc::new(Socks6Handler::new(chain)),

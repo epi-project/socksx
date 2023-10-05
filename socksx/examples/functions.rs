@@ -10,7 +10,6 @@ use bytes::BytesMut;
 use chacha20::{ChaCha20, Key, Nonce};
 use chacha20::cipher::{KeyIvInit as _, StreamCipher};
 use clap::Parser;
-use clap::builder::PossibleValuesParser;
 use dotenv::dotenv;
 use pin_project_lite::pin_project;
 use tokio::io::{self, AsyncBufRead, BufReader, BufWriter};
@@ -34,7 +33,7 @@ struct Args {
     port: u16,
 
     /// SOCKS version
-    #[clap(short, long, env = "SOCKS", default_value = "6", value_parser = PossibleValuesParser::new(["5", "6"]))]
+    #[clap(short, long, env = "SOCKS", default_value = "6")]
     socks: u8,
 
     #[clap(subcommand)]
@@ -63,6 +62,7 @@ async fn main() -> Result<()> {
     // Create a TCP listener bound to the specified host and port.
     let listener = TcpListener::bind(format!("{}:{}", args.host, args.port)).await?;
     // Determine the appropriate SOCKS handler based on the specified version.
+    // Determine the appropriate SOCKS handler based on the specified version and restricting them to 5 and 6
     let handler: Handler = match args.socks {
         5 => Arc::new(Socks5Handler::default()),
         6 => Arc::new(Socks6Handler::default()),
