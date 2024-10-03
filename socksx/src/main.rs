@@ -70,12 +70,7 @@ async fn main() -> Result<()> {
         logger.filter_level(LevelFilter::Info).init();
 
         // Setup human-friendly panic messages
-        setup_panic!(Metadata {
-            name: "SOCKSX".into(),
-            version: env!("CARGO_PKG_VERSION").into(),
-            authors: env!("CARGO_PKG_AUTHORS").replace(":", ", ").into(),
-            homepage: env!("CARGO_PKG_HOMEPAGE").into(),
-        });
+        setup_panic!(metadata!());
     }
 
     // TODO: validate host
